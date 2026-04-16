@@ -10,7 +10,7 @@ err_handler () {
   echo "Exiting in 3 seconds..."; sleep 3; exit
 }
 run_gifpaper () {
-  # selects the gifpaper specified above and runs it as animated wallpaper
+  # selects the gifpaper specified and runs it as animated wallpaper
   # sends it to all detected displays for consistency
   local gifpaper="$HOME/wiredWM/wp/gifpaperslain/lain4.gif"
   mpvpaper ALL -o "loop panscan=1" "$gifpaper"
