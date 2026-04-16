@@ -37,7 +37,7 @@ main () {
   	install_needed_pkgs
   	echo "Cloning, building, and installing mpvpaper..."; sleep 1
   	clone_build_mpvpaper	# build and install
-	run_gifpaper_setter	# set ani wp
+	run_gifpaper_setter	    # set ani wp
 	echo "Done! You should now see your animated wallpaper."; sleep 1
 	echo "Exiting the script..."; sleep 3 && exit
 }
