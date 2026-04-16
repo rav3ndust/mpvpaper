@@ -5,12 +5,12 @@ set -euo pipefail
 err_handler () {
   # simple error handler
   local err1="Oops! Something went wrong."
-  local err2="Pleas see logs above and try again."
+  local err2="Please see logs above and try again."
   echo "$err1"; sleep 1; echo "$err2"; sleep 1
   echo "Exiting in 3 seconds..."; sleep 3; exit
 }
 run_gifpaper () {
-  # selects the gifpaper specified and runs it as animated wallpaper
+  # selects the gifpaper specified above and runs it as animated wallpaper
   # sends it to all detected displays for consistency
   local gifpaper="$HOME/wiredWM/wp/gifpaperslain/lain4.gif"
   mpvpaper ALL -o "loop panscan=1" "$gifpaper"
@@ -27,4 +27,4 @@ main () {
 # - - - entry
 main || err_handler
 # TODO add checks to make sure mpvpaper is actually built and installed
-# run an installer and build script for it if not  
+# run an installer and build script for it if not
