@@ -34,8 +34,8 @@ main () {
   	local ver="0.10"
  	echo "$t - version $ver"; sleep 1
   	echo "Cloning, building, and installing mpvpaper..."; sleep 1
-  	clone_build_mpvpaper		# build and install
-	run_gifpaper_setter		# set ani wp
+  	clone_build_mpvpaper
+	run_gifpaper_setter	
 	echo "Done! You should now see your animated wallpaper."; sleep 1
 	echo "Exiting the script..."; sleep 3 && exit
 }
