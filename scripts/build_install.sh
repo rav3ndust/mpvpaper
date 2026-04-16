@@ -12,7 +12,7 @@ err_handler () {
 clone_build_mpvpaper () {
 	 # clones and builds our mpvpaper fork repo, then installs it
 	 local repo_link="https://github.com/rav3ndust/mpvpaper"
-	 local pkgs="meson"
+	 local pkgs="meson libmpv-dev"
  	 doas apt update && doas apt install $pkgs -y
 	 # clone step
   	 git clone $repo_link
