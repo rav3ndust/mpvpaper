@@ -25,7 +25,7 @@ clone_build_mpvpaper () {
 }
 run_gifpaper_setter () {
 	# runs the gifpaper_setter script we wrote for setting an animated wallpaper
-	local script="gifpaper-setter.sh"
+	local script="gifpaper_setter.sh"
 	echo "Setting animated wallpaper..."; sleep 1
 	bash $script
 }
