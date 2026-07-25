@@ -192,10 +192,17 @@ static void toplevel_state(void *data, struct zwlr_foreign_toplevel_handle_v1 *t
 
     wl_array_for_each(s, state) {
         if (*s == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN) {
-            currently_blocking = true;
-            break;
+            if (halt_info.auto_stop == 2 || halt_info.auto_stop == 3) {
+                currently_blocking = true;
+                break;
+            }
         } else if (*s == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_MAXIMIZED) {
-            if (halt_info.auto_stop > 2) {
+            if (halt_info.auto_stop == 3) {
+                currently_blocking = true;
+                break;
+            }
+        } else if (*s == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_ACTIVATED) {
+            if (halt_info.auto_stop == 4) {
                 currently_blocking = true;
                 break;
             }
@@ -530,6 +537,7 @@ static void parse_command_line(int argc, char **argv, struct wl_state *state) {
             case 'a':
                 if (strcasecmp(optarg, "full") == 0) auto_mode = 2;
                 else if (strcasecmp(optarg, "max") == 0) auto_mode = 3;
+                else if (strcasecmp(optarg, "active") == 0) auto_mode = 4;
                 break;
         }
     }
