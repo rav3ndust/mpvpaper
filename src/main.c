@@ -67,8 +67,8 @@ struct toplevel_handle_state {
 };
 
 static EGLConfig egl_config;
-static EGLDisplay *egl_display;
-static EGLContext *egl_context;
+static EGLDisplay egl_display;
+static EGLContext egl_context;
 
 static mpv_handle *mpv;
 static mpv_render_context *mpv_glcontext;
@@ -773,10 +773,18 @@ static void toplevel_state(void *data, struct zwlr_foreign_toplevel_handle_v1 *t
 
     wl_array_for_each(s, state) {
         if (*s == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN) {
-            currently_blocking = true;
-            break;
+            if (halt_info.auto_pause == 2 || halt_info.auto_pause == 3 ||
+                halt_info.auto_stop == 2 || halt_info.auto_stop == 3) {
+                currently_blocking = true;
+                break;
+            }
         } else if (*s == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_MAXIMIZED) {
-            if (halt_info.auto_pause > 2 || halt_info.auto_stop > 2) {
+            if (halt_info.auto_pause == 3 || halt_info.auto_stop == 3) {
+                currently_blocking = true;
+                break;
+            }
+        } else if (*s == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_ACTIVATED) {
+            if (halt_info.auto_pause == 4 || halt_info.auto_stop == 4) {
                 currently_blocking = true;
                 break;
             }
@@ -799,8 +807,9 @@ static void toplevel_closed(void *data, struct zwlr_foreign_toplevel_handle_v1 *
         check_handle_blocking(handle_state, wl_state, false);
 
     // Destroy handle
-    if (handle_state->title) free(handle_state->title);
     wl_list_remove(&handle_state->link);
+    free(handle_state->title);
+    free(handle_state);
 }
 
 static void toplevel_parent(void *data, struct zwlr_foreign_toplevel_handle_v1 *toplevel_handle,
@@ -841,14 +850,16 @@ static void destroy_display_output(struct display_output *output) {
     if (!output) return;
 
     wl_list_remove(&output->link);
-    if (output->layer_surface != NULL)
-        zwlr_layer_surface_v1_destroy(output->layer_surface);
-    if (output->surface != NULL)
-        wl_surface_destroy(output->surface);
     if (output->egl_surface)
         eglDestroySurface(egl_display, output->egl_surface);
     if (output->egl_window)
         wl_egl_window_destroy(output->egl_window);
+    if (output->layer_surface != NULL)
+        zwlr_layer_surface_v1_destroy(output->layer_surface);
+    if (output->surface != NULL)
+        wl_surface_destroy(output->surface);
+    if (output->frame_callback)
+        wl_callback_destroy(output->frame_callback);
     wl_output_destroy(output->wl_output);
 
     free(output->name);
@@ -1177,8 +1188,8 @@ static void parse_command_line(int argc, char **argv, struct wl_state *state) {
         "                               Reduces CPU usage seamlessly\n"
         "--auto-stop    -s              Automagically* stop mpv when the wallpaper is hidden\n"
         "                               Reduces CPU/RAM usage more abruptly\n"
-        "--auto-mode    -a <FULL|MAX>   Extend auto-pause/stop to trigger when any window is\n"
-        "                               <FULL> (fullscreen) or <MAX> (fullscreen/maximized)\n"
+        "--auto-mode    -a <mode>       Extend auto-pause/stop to trigger when any window is\n"
+        "                               <FULL>(fullscreen) | <MAX>(fullscreen/maximized) | <ACTIVE>(currently active)\n"
         "--slideshow    -n <seconds>    Slideshow mode plays the next video in a playlist every <seconds>\n"
         "                               And passes mpv options \"loop loop-playlist\" for convenience\n"
         "--layer        -l <layer>      Specifies shell surface <layer> to run on (default: background)\n"
@@ -1231,8 +1242,9 @@ static void parse_command_line(int argc, char **argv, struct wl_state *state) {
             case 'a':
                 if (strcasecmp(optarg, "full") == 0) auto_mode = 2;
                 else if (strcasecmp(optarg, "max") == 0) auto_mode = 3;
+                else if (strcasecmp(optarg, "active") == 0) auto_mode = 4;
                 else {
-                    cflp_error("Neither FULL or MAX was selected for the auto-mode\n");
+                    cflp_error("FULL, MAX, or ACTIVE was not selected for the auto-mode\n");
                     exit(EXIT_FAILURE);
                 }
                 break;
@@ -1481,8 +1493,8 @@ int main(int argc, char **argv) {
             mpv_render_context_update(mpv_glcontext);
 
             // Draw frame for all outputs
-            struct display_output *output;
-            wl_list_for_each(output, &state.outputs, link) {
+            struct display_output *output, *tmp_output;
+            wl_list_for_each_safe(output, tmp_output, &state.outputs, link) {
                 // Redraw immediately if not waiting for frame callback
                 if (output->frame_callback == NULL) {
                     // Avoid crash when output is destroyed
